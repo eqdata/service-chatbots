@@ -3,13 +3,9 @@ package com.github.synesso.p99bot
 import java.util
 import java.util.{LinkedHashMap => LRUMap}
 
-import io.scalac.slack.MessageEventBus
-import io.scalac.slack.bots.AbstractBot
-import io.scalac.slack.common._
-
 import scala.language.postfixOps
 
-case class AuctionCommands(override val bus: MessageEventBus) extends AbstractBot with SlackMessaging {
+case class AuctionCommands() /*(override val bus: MessageEventBus) extends AbstractBot with SlackMessaging {
 
   private val channels = Map(
     "blue" -> "C4QM0A7NV",
@@ -75,6 +71,6 @@ case class AuctionCommands(override val bus: MessageEventBus) extends AbstractBo
     case Command("hi" | "hello", _, message) =>
       publish(OutboundMessage(message.channel, s"Hello <@${message.user}>! :dog2:"))
   }
-}
+}*/
 
 case class User(name: String) extends AnyVal

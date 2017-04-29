@@ -7,8 +7,11 @@ scalaVersion := "2.11.8"
 resolvers += "scalac repo" at "https://raw.githubusercontent.com/ScalaConsultants/mvn-repo/master/"
 
 libraryDependencies ++= Seq(
-  "io.scalac" %% "slack-scala-bot-core" % "0.2.1",
-  "io.socket" % "socket.io-client" % "0.8.3"
+  "com.github.gilbertw1" %% "slack-scala-client" % "0.2.1",
+  "io.socket" % "socket.io-client" % "0.8.3",
+  "io.spray" %% "spray-json" % "1.3.3",
+  "ch.qos.logback" % "logback-classic" % "1.1.7",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
 )
 
 enablePlugins(DockerPlugin)
