@@ -22,7 +22,13 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
   private def started(websocket: Socket, subscribers: List[ActorRef]): Receive = {
     case update: AuctionUpdate =>
       logger.trace(s"Sending update to ${subscribers.size} subscribers")
-      subscribers.foreach(_ ! update)
+      val newItems = AuctionCache.post(update)
+      for {
+        subscriber <- subscribers
+        newItem <- newItems
+      } {
+        subscriber ! newItem
+      }
   }
 
   private def auctionWebSocket: Socket = {
@@ -86,14 +92,11 @@ object AuctionAgent {
     }
   }
 
-  // todo - links don't work
-  case class Item(name: String, uri: String) {
-    def link: String = s"<https://wiki.project1999.com/$uri|$name>"
-  }
-
   // todo - differentiate between wts and wtb (also "selling", "buying", "wtt", "trading" "mq??")
+  case class Item(name: String, uri: String)
   case class Auction(line: String, items: List[Item])
   case class AuctionUpdate(server: String, auctions: List[Auction])
+  case class User(name: String) extends AnyVal
 
   case class Subscribe(actor: ActorRef)
   case object Start

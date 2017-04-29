@@ -1,7 +1,7 @@
 package com.github.eqdata
 
 import akka.actor.{Actor, ActorSystem}
-import com.github.eqdata.AuctionAgent.AuctionUpdate
+import com.github.eqdata.AuctionAgent.{AuctionUpdate, Item, User}
 import slack.api.SlackApiClient
 
 class SlackPublisher(token: String) extends Actor {
@@ -11,10 +11,16 @@ class SlackPublisher(token: String) extends Actor {
   val client = SlackApiClient(token)
 
   override def receive: Receive = {
-    case update: AuctionUpdate =>
-      // todo - lookup channel id
-      // todo - why doesn't shady's avatar show?
-      // todo - migrate glomeration from old "AuctionCommands" class
-      client.postChatMessage("G4Q22VA67", update.auctions.map(_.line).mkString("\n"))
+    // todo - lookup channel id from configured name via api
+    // todo - why doesn't shady's avatar show?
+    case (User(name), items: Set[Item]) =>
+      val msg = items
+        .map { i =>
+          s"<https://wiki.project1999.com/${i.uri}|${i.name}>"
+        }
+        .toList
+        .sorted
+        .mkString(s"$name is selling ", ", ", ".")
+      client.postChatMessage("G4Q22VA67", msg)
   }
 }
