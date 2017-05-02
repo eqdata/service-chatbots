@@ -17,7 +17,11 @@ object Main extends App {
         serverType = config.getString("auctioneer.server-type")
       )))
 
-  val slack = system.actorOf(Props(new SlackPublisher(config.getString("slack.token"))), "slack-publisher")
+  val slack = {
+    val token = config.getString("slack.token")
+    val channel = config.getString("slack.channel")
+    system.actorOf(Props(new SlackPublisher(token, channel)), "slack-publisher")
+  }
 
   auctioneer ! Subscribe(slack)
   auctioneer ! Start
