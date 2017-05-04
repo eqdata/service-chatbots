@@ -21,6 +21,7 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
 
   private def started(websocket: Socket, subscribers: List[ActorRef]): Receive = {
     case update: AuctionUpdate =>
+      logger.trace(s"$update")
       logger.trace(s"Sending update to ${subscribers.size} subscribers")
       val newItems = AuctionCache.post(update)
       for {
@@ -47,7 +48,7 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
         new Emitter.Listener {
           override def call(args: AnyRef*): Unit = {
             val auctionUpdate = args.head.toString.parseJson.convertTo[AuctionUpdate]
-            logger.trace(s"Recieved update on join: $auctionUpdate")
+            logger.trace(s"Received update on join: $auctionUpdate")
             self ! auctionUpdate
           }
         }
@@ -57,7 +58,7 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
         new Emitter.Listener {
           override def call(args: AnyRef*): Unit = {
             val newAuctions = args.head.toString.parseJson.convertTo[List[Auction]]
-            logger.trace(s"Recieved update: $newAuctions")
+            logger.trace(s"Received update: $newAuctions")
             self ! AuctionUpdate(serverType, newAuctions)
           }
         }
