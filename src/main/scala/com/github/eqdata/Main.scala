@@ -1,7 +1,7 @@
 package com.github.eqdata
 
 import akka.actor.{ActorSystem, Props}
-import com.github.eqdata.AuctionAgent.{Start, Subscribe}
+import com.github.eqdata.AuctionAgent.Subscribe
 import com.typesafe.config.ConfigFactory
 
 object Main extends App {
@@ -10,12 +10,12 @@ object Main extends App {
 
   private val config = ConfigFactory.load
 
-  val auctioneer = system.actorOf(
-    Props(
-      new AuctionAgent(
-        webSocketUrl = config.getString("auctioneer.websocket-url"),
-        serverType = config.getString("auctioneer.server-type")
-      )))
+  val auctioneer = system.actorOf(Props(
+                                    new AuctionAgent(
+                                      webSocketUrl = config.getString("auctioneer.websocket-url"),
+                                      serverType = config.getString("auctioneer.server-type")
+                                    )),
+                                  "auctioneer")
 
   val slack = {
     val token = config.getString("slack.token")
@@ -27,3 +27,6 @@ object Main extends App {
   auctioneer ! Start
 
 }
+
+case object Start
+case object Stop

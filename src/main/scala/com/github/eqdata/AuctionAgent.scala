@@ -1,11 +1,11 @@
 package com.github.eqdata
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, PoisonPill}
+import com.github.eqdata.AuctionAgent._
+import com.typesafe.scalalogging.LazyLogging
 import io.socket.client.{IO, Socket}
 import io.socket.emitter.Emitter
 import spray.json.DefaultJsonProtocol._
-import AuctionAgent._
-import com.typesafe.scalalogging.LazyLogging
 import spray.json.{JsonFormat, _}
 
 class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with LazyLogging {
@@ -15,8 +15,12 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
   override def receive: Receive = notStarted(Nil)
 
   private def notStarted(subscribers: List[ActorRef]): Receive = {
-    case Subscribe(actor) => context.become(notStarted(actor +: subscribers))
-    case Start            => context.become(started(auctionWebSocket, subscribers))
+    case Subscribe(actor) =>
+      context.become(notStarted(actor +: subscribers))
+    case Start =>
+      logger.trace(s"starting $self")
+      subscribers.foreach(_ ! Start)
+      context.become(started(auctionWebSocket, subscribers))
   }
 
   private def started(websocket: Socket, subscribers: List[ActorRef]): Receive = {
@@ -30,6 +34,10 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
       } {
         subscriber ! newItem
       }
+    case Stop =>
+      logger.info("disconnecting from websocket & terminating")
+      websocket.close()
+      context.system.terminate()
   }
 
   private def auctionWebSocket: Socket = {
@@ -95,11 +103,13 @@ object AuctionAgent {
 
   // todo - differentiate between wts and wtb (also "selling", "buying", "wtt", "trading" "mq??")
   case class Item(name: String, uri: String)
+
   case class Auction(line: String, items: List[Item])
+
   case class AuctionUpdate(server: String, auctions: List[Auction])
+
   case class User(name: String) extends AnyVal
 
   case class Subscribe(actor: ActorRef)
-  case object Start
 
 }
