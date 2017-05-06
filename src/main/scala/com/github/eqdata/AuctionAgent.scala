@@ -1,6 +1,8 @@
 package com.github.eqdata
 
-import akka.actor.{Actor, ActorRef, PoisonPill}
+import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
 import com.github.eqdata.AuctionAgent._
 import com.typesafe.scalalogging.LazyLogging
 import io.socket.client.{IO, Socket}
@@ -8,9 +10,15 @@ import io.socket.emitter.Emitter
 import spray.json.DefaultJsonProtocol._
 import spray.json.{JsonFormat, _}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with LazyLogging {
 
   import JsonProtocol._
+
+  implicit val timeout = Timeout(10 seconds)
 
   override def receive: Receive = notStarted(Nil)
 
@@ -19,8 +27,9 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
       context.become(notStarted(actor +: subscribers))
     case Start =>
       logger.trace(s"starting $self")
-      subscribers.foreach(_ ! Start)
-      context.become(started(auctionWebSocket, subscribers))
+      Future.sequence(subscribers.map(_ ? Start)).foreach { _ =>
+        context.become(started(auctionWebSocket, subscribers))
+      }
   }
 
   private def started(websocket: Socket, subscribers: List[ActorRef]): Receive = {

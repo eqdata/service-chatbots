@@ -29,4 +29,5 @@ object Main extends App {
 }
 
 case object Start
+case object Started
 case object Stop

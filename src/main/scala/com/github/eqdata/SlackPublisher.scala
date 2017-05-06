@@ -1,6 +1,6 @@
 package com.github.eqdata
 
-import akka.actor.{Actor, ActorSystem, PoisonPill}
+import akka.actor.{Actor, ActorSystem}
 import com.github.eqdata.AuctionAgent.{Item, User}
 import com.typesafe.config.ConfigException.BadValue
 import com.typesafe.scalalogging.LazyLogging
@@ -8,7 +8,7 @@ import slack.api.SlackApiClient
 import slack.models.Channel
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -29,7 +29,9 @@ class SlackPublisher(token: String, channelName: String) extends Actor with Lazy
             _.find(_.name == channelName)
               .getOrElse(throw new BadValue("slack.channel", "no channel with this name")))
       futureChannel.onComplete {
-        case Success(channel) => context.become(ready(channel))
+        case Success(channel) =>
+          sentFrom ! Started
+          context.become(ready(channel))
         case Failure(t) =>
           t.printStackTrace()
           sentFrom ! Stop
