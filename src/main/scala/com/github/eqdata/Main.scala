@@ -10,12 +10,12 @@ object Main extends App {
 
   private val config = ConfigFactory.load
 
-  val auctioneer = system.actorOf(Props(
-                                    new AuctionAgent(
-                                      webSocketUrl = config.getString("auctioneer.websocket-url"),
-                                      serverType = config.getString("auctioneer.server-type")
-                                    )),
-                                  "auctioneer")
+  val auctioneer = {
+    val webSocketUrl = config.getString("auctioneer.websocket-url")
+    val serverType = config.getString("auctioneer.server-type")
+    val auctionAgentProps = Props(new AuctionAgent(webSocketUrl, serverType))
+    system.actorOf(auctionAgentProps, "auctioneer")
+  }
 
   val slack = {
     val token = config.getString("slack.token")
