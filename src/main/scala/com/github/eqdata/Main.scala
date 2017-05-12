@@ -2,6 +2,7 @@ package com.github.eqdata
 
 import akka.actor.{ActorSystem, Props}
 import com.github.eqdata.AuctionAgent.Subscribe
+import com.github.eqdata.Slack.Bot
 import com.typesafe.config.ConfigFactory
 
 object Main extends App {
@@ -20,7 +21,11 @@ object Main extends App {
   val slack = {
     val token = config.getString("slack.token")
     val channel = config.getString("slack.channel")
-    system.actorOf(Props(new SlackPublisher(token, channel)), "slack-publisher")
+    val bot = Bot(
+      name = config.getString("slack.bot.name"),
+      iconUrl = config.getString("slack.bot.iconUrl")
+    )
+    system.actorOf(Props(new SlackPublisher(token, channel, bot)), "slack-publisher")
   }
 
   auctioneer ! Subscribe(slack)

@@ -2,6 +2,7 @@ package com.github.eqdata
 
 import akka.actor.{Actor, ActorSystem}
 import com.github.eqdata.AuctionAgent.{Item, User}
+import com.github.eqdata.Slack.Bot
 import com.typesafe.config.ConfigException.BadValue
 import com.typesafe.scalalogging.LazyLogging
 import slack.api.SlackApiClient
@@ -12,7 +13,7 @@ import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-class SlackPublisher(token: String, channelName: String) extends Actor with LazyLogging {
+class SlackPublisher(token: String, channelName: String, bot: Bot) extends Actor with LazyLogging {
 
   implicit val system: ActorSystem = context.system
 
@@ -47,7 +48,13 @@ class SlackPublisher(token: String, channelName: String) extends Actor with Lazy
         .toList
         .sorted
         .mkString(s"$name is selling ", ", ", ".")
-      client.postChatMessage(channel.id, msg)
+      client.postChatMessage(channel.id, msg, username = Some(bot.name), iconUrl = Some(bot.iconUrl))
 
   }
+}
+
+object Slack {
+
+  case class Bot(name: String, iconUrl: String)
+
 }
