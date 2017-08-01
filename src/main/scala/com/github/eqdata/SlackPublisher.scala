@@ -3,6 +3,7 @@ package com.github.eqdata
 import akka.actor.{Actor, ActorSystem}
 import com.github.eqdata.AuctionAgent.{Item, User}
 import com.github.eqdata.Slack.Bot
+import com.github.eqdata.cmd.PostAuction
 import com.typesafe.config.ConfigException.BadValue
 import com.typesafe.scalalogging.LazyLogging
 import slack.api.SlackApiClient
@@ -26,9 +27,12 @@ class SlackPublisher(token: String, channelName: String, bot: Bot) extends Actor
       val futureChannel: Future[Channel] =
         client
           .listChannels()
-          .map(
-            _.find(_.name == channelName)
-              .getOrElse(throw new BadValue("slack.channel", "no channel with this name")))
+          .map { channels =>
+            logger.trace(s"Found ${channels.size} channels: ${channels.map(_.name).sorted.mkString(", ")}")
+            channels
+              .find(_.name == channelName)
+              .getOrElse(throw new BadValue("slack.channel", "no channel with this name"))
+          }
       futureChannel.onComplete {
         case Success(channel) =>
           sentFrom ! Started
@@ -40,7 +44,7 @@ class SlackPublisher(token: String, channelName: String, bot: Bot) extends Actor
   }
 
   private def ready(channel: Channel): Receive = {
-    case (User(name), items: Set[Item]) =>
+    case PostAuction(User(name), items) =>
       val msg = items
         .map { i =>
           s"<https://wiki.project1999.com/${i.uri}|${i.name}>"

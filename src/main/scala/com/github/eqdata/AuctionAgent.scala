@@ -4,6 +4,7 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import com.github.eqdata.AuctionAgent._
+import com.github.eqdata.cmd.PostAuction
 import com.typesafe.scalalogging.LazyLogging
 import io.socket.client.{IO, Socket}
 import io.socket.emitter.Emitter
@@ -18,12 +19,13 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
 
   import JsonProtocol._
 
-  implicit val timeout = Timeout(10 seconds)
+  implicit val timeout = Timeout(10.seconds)
 
   override def receive: Receive = notStarted(Nil)
 
   private def notStarted(subscribers: List[ActorRef]): Receive = {
     case Subscribe(actor) =>
+      logger.trace(s"subscribing $actor #${subscribers.size + 1}")
       context.become(notStarted(actor +: subscribers))
     case Start =>
       logger.trace(s"starting $self")
@@ -41,7 +43,7 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
         subscriber <- subscribers
         newItem <- newItems
       } {
-        subscriber ! newItem
+        subscriber ! PostAuction(newItem._1, newItem._2)
       }
     case Stop =>
       logger.info("disconnecting from websocket & terminating")

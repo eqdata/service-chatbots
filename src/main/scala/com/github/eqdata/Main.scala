@@ -18,6 +18,7 @@ object Main extends App {
     system.actorOf(auctionAgentProps, "auctioneer")
   }
 
+  /*
   val slack = {
     val token = config.getString("slack.token")
     val channel = config.getString("slack.channel")
@@ -27,8 +28,15 @@ object Main extends App {
     )
     system.actorOf(Props(new SlackPublisher(token, channel, bot)), "slack-publisher")
   }
+   */
 
-  auctioneer ! Subscribe(slack)
+  val discord = {
+    val token = config.getString("discord.token")
+    system.actorOf(Props(new DiscordPublisher(token)))
+  }
+
+//  auctioneer ! Subscribe(slack)
+  auctioneer ! Subscribe(discord)
   auctioneer ! Start
 
 }
