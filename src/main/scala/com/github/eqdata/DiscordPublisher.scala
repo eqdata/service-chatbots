@@ -42,7 +42,7 @@ class DiscordPublisher(token: String)(implicit system: ActorSystem) extends Acto
     case DisableBot(channel) =>
       if (subscribedChannels.contains(channel)) {
         self ! SendMessage(s"Steps into the shadows and fades away", channel)
-        context.become(running(client, subscribedChannels + channel))
+        context.become(running(client, subscribedChannels - channel))
       }
 
     case PostAuction(User(name), items) =>
