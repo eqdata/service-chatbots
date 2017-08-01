@@ -1,4 +1,4 @@
-name := "service-chatbots"
+name := "service-chatbot"
 
 organization := "com.github.eqdata"
 
@@ -20,9 +20,12 @@ libraryDependencies ++= Seq(
 
 enablePlugins(DockerPlugin)
 
-imageNames in docker := Seq(ImageName(s"synesso/service-chatbots:${git.gitHeadCommit.value.get}"))
+imageNames in docker := Seq(
+  ImageName(s"synesso/service-chatbot:${git.gitHeadCommit.value.get}"),
+  ImageName(s"synesso/service-chatbot:latest")
+)
 
-docker <<= (docker dependsOn assembly)
+docker := (docker dependsOn assembly).value
 
 dockerfile in docker := {
   val artifact = (assemblyOutputPath in assembly).value
