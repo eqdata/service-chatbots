@@ -37,8 +37,9 @@ class AuctionAgent(webSocketUrl: String, serverType: String) extends Actor with 
   private def started(websocket: Socket, subscribers: List[ActorRef]): Receive = {
     case update: AuctionUpdate =>
       logger.trace(s"$update")
-      logger.trace(s"Sending update to ${subscribers.size} subscribers")
       val newItems = AuctionCache.post(update)
+      // todo - if newItems.nonEmpty {
+      logger.trace(s"Sending update to ${subscribers.size} subscribers")
       for {
         subscriber <- subscribers
         newItem <- newItems

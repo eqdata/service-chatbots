@@ -52,7 +52,7 @@ class DiscordPublisher(token: String)(implicit system: ActorSystem) extends Acto
 
     case PostAuction(User(name), items) =>
       val msg = items.foldLeft(new EmbedBuilder().withTitle(s"**$name** auctions")) { case (m, i) =>
-          m.appendField("selling (for ???)", s"[${i.name}](https://wiki.project1999.com/${i.uri})", true)
+          m.appendField("selling", s"[${i.name}](https://wiki.project1999.com/${i.uri})", true)
       }.build()
       subscribedChannels.foreach(ch => self ! SendMessage(Right(msg), ch))
   }
