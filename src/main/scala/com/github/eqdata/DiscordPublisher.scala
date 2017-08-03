@@ -4,11 +4,12 @@ import akka.actor.{Actor, ActorSystem}
 import com.github.eqdata.AuctionAgent.User
 import com.github.eqdata.cmd.{BotCommand, DisableBot, EnableBot, PostAuction}
 import com.typesafe.scalalogging.LazyLogging
-import sx.blah.discord.api.{ClientBuilder, IDiscordClient}
 import sx.blah.discord.api.events.IListener
+import sx.blah.discord.api.internal.json.objects.EmbedObject
+import sx.blah.discord.api.{ClientBuilder, IDiscordClient}
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IChannel
-import sx.blah.discord.util.MessageBuilder
+import sx.blah.discord.util.{EmbedBuilder, MessageBuilder}
 
 import scala.language.postfixOps
 
@@ -31,33 +32,30 @@ class DiscordPublisher(token: String)(implicit system: ActorSystem) extends Acto
 
   private def running(client: IDiscordClient, subscribedChannels: Set[IChannel] = Set.empty): Receive = {
     case SendMessage(msg, channel) =>
-      new MessageBuilder(client).withChannel(channel).withContent(msg).build
+      val mb = new MessageBuilder(client).withChannel(channel)
+      (msg match {
+        case Left(str) => mb.withContent(str)
+        case Right(embed) => mb.withEmbed(embed)
+      }).build
 
     case EnableBot(channel) =>
       if (!subscribedChannels.contains(channel)) {
-        self ! SendMessage(s"Starting auction feed", channel)
+        self ! SendMessage(Left("Starting auction feed"), channel)
         context.become(running(client, subscribedChannels + channel))
       }
 
     case DisableBot(channel) =>
       if (subscribedChannels.contains(channel)) {
-        self ! SendMessage(s"Steps into the shadows and fades away", channel)
+        self ! SendMessage(Left("Steps into the shadows and fades away"), channel)
         context.become(running(client, subscribedChannels - channel))
       }
 
     case PostAuction(User(name), items) =>
-      val msg = items
-        .map { i =>
-          s"https://wiki.project1999.com/${i.uri}"
-        }
-        .toList
-        .sorted
-        .mkString(s"**$name** is selling ", " ", "")
-
-      subscribedChannels.foreach(ch => self ! SendMessage(msg, ch))
-
+      val msg = items.foldLeft(new EmbedBuilder().withTitle(s"**$name** auctions")) { case (m, i) =>
+          m.appendField("selling (for ???)", s"[${i.name}](https://wiki.project1999.com/${i.uri})", true)
+      }.build()
+      subscribedChannels.foreach(ch => self ! SendMessage(Right(msg), ch))
   }
-
 }
 
-case class SendMessage(msg: String, channel: IChannel)
+case class SendMessage(msg: Either[String, EmbedObject], channel: IChannel)
